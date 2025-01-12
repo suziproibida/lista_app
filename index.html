@@ -8,9 +8,8 @@
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin: 0;
-            padding: 20px;
             background-color: #f4f4f4;
+            padding: 20px;
         }
         table {
             width: 100%;
@@ -21,9 +20,15 @@
         th, td {
             padding: 8px 12px;
             border: 1px solid #ccc;
+            text-align: center;
         }
         th {
             background-color: #eee;
+        }
+        input[type="text"] {
+            width: 100%;
+            border: none;
+            text-align: center;
         }
         button {
             background-color: #4CAF50;
@@ -32,25 +37,13 @@
             border: none;
             cursor: pointer;
             font-size: 16px;
-        }
-        input[type="text"] {
-            padding: 8px;
-            width: 200px;
-            margin: 10px;
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
     <h1>Lista de Presentes - Chá de Casa Nova</h1>
-    <p>Escolha o presente que você deseja dar para o chá de casa nova:</p>
 
-    <form id="present-form">
-        <input type="text" id="name" placeholder="Seu nome" required>
-        <input type="text" id="gift" placeholder="Presente" required>
-        <button type="submit">Adicionar</button>
-    </form>
-
-    <h2>Presentes já escolhidos:</h2>
     <table id="gift-table">
         <thead>
             <tr>
@@ -59,34 +52,33 @@
             </tr>
         </thead>
         <tbody>
-            <!-- Dados da planilha serão inseridos aqui -->
+            <!-- Dados da planilha serão carregados aqui -->
         </tbody>
     </table>
 
-    <script>
-        // URL da planilha em formato JSON
-        const sheetUrl = "https://spreadsheets.google.com/feeds/list/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/od6/public/values?alt=json";
+    <button onclick="sendUpdates()">Salvar Atualizações</button>
 
-        // Função para carregar os dados da planilha
+    <script>
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/gviz/tq?tqx=out:json"; 
+        const apiUrl = "https://script.google.com/macros/s/AKfycbzYPCkyCoTMXtl5MUvnGPM-TQrJSBrV-82UtM_AkicKPJjOoG9P5tKqplpJdQtMJCGR/exec"; // Substitua pelo seu script do Apps Script
+
+        // Carregar dados da planilha
         function loadData() {
             fetch(sheetUrl)
-                .then(response => response.text())  // O retorno não é JSON puro
+                .then(response => response.text())
                 .then(data => {
-                    // Remover caracteres extras do JSON
                     const json = JSON.parse(data.substring(47).slice(0, -2));  
                     const tableBody = document.querySelector('#gift-table tbody');
-                    tableBody.innerHTML = "";  // Limpar a tabela antes de adicionar novas linhas
+                    tableBody.innerHTML = "";
 
-                    // Pegar os dados das linhas
-                    const rows = json.table.rows;
-                    rows.forEach(row => {
-                        const gift = row.c[0] ? row.c[0].v : "";  // Coluna do presente
-                        const name = row.c[1] ? row.c[1].v : "";  // Coluna do nome
+                    json.table.rows.forEach((row, index) => {
+                        const gift = row.c[0] ? row.c[0].v : "";
+                        const name = row.c[1] ? row.c[1].v : "";
 
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
-                            <td contenteditable="true">${gift}</td>
-                            <td contenteditable="true">${name}</td>
+                            <td>${gift}</td>
+                            <td><input type="text" value="${name}" data-index="${index}"></td>
                         `;
                         tableBody.appendChild(tr);
                     });
@@ -94,34 +86,35 @@
                 .catch(error => console.error("Erro ao carregar dados:", error));
         }
 
-        // Carregar dados quando a página for aberta
-        window.onload = loadData;
-        // Função para atualizar os dados na planilha
-        function updateData(id, field, value) {
-            const apiUrl = "https://script.google.com/macros/s/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/exec"; // Substitua pelo ID do seu script
-            const data = {
-                id: id,
-                field: field,
-                value: value
-            };
+        // Enviar atualizações para o Google Sheets
+        function sendUpdates() {
+            const inputs = document.querySelectorAll("input[type='text']");
+            const updates = [];
+
+            inputs.forEach(input => {
+                const index = input.getAttribute("data-index");
+                const name = input.value.trim();
+                updates.push({ index, name });
+            });
 
             fetch(apiUrl, {
                 method: "POST",
-                body: JSON.stringify(data),
+                body: JSON.stringify({ updates }),
                 headers: { "Content-Type": "application/json" }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.status === "success") {
-                    console.log("Dados atualizados!");
+                    alert("Dados atualizados com sucesso!");
+                    loadData(); // Recarregar a tabela
                 } else {
-                    console.error("Erro ao atualizar dados:", data.message);
+                    console.error("Erro ao atualizar:", data.message);
                 }
             })
             .catch(error => console.error("Erro ao enviar dados:", error));
         }
 
-        // Carregar os dados ao carregar a página
+        // Carregar a tabela ao abrir o site
         window.onload = loadData;
     </script>
 </body>
