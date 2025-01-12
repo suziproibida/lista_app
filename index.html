@@ -67,8 +67,8 @@
 
     <script>
         const sheetUrl = "https://docs.google.com/spreadsheets/d/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/gviz/tq?tqx=out:json";
-        const apiUrl = "https://script.google.com/macros/s/AKfycbxzMmM9XWqV03LVwWNepNG3b3p6RDIq-emMuK5iQuEGM531NvVxSA5Jl6OZco2mXQMY/exec";
-
+        const apiUrl = "https://script.google.com/macros/s/AKfycbw6pxUvylMWDrMxOoYcZco0jDPH_s6DvNGQrpTGoakF8M7vY2qYN1xIV6-a1ugEVEpP/exec";
+    
         function loadData() {
             fetch(sheetUrl)
                 .then(response => response.text())
@@ -76,10 +76,10 @@
                     data = JSON.parse(data.substring(47).slice(0, -2));
                     const tableBody = document.querySelector('#gift-table tbody');
                     tableBody.innerHTML = "";
-
+    
                     data.table.rows.forEach(row => {
-                        const name = row.c[0]?.v || "";
-                        const gift = row.c[1]?.v || "";
+                        const name = row.c[1]?.v || "";
+                        const gift = row.c[0]?.v || "";
                         const rowElement = document.createElement('tr');
                         rowElement.innerHTML = `<td>${name}</td><td>${gift}</td>`;
                         tableBody.appendChild(rowElement);
@@ -87,12 +87,17 @@
                 })
                 .catch(error => console.error("Erro ao carregar dados:", error));
         }
-
+    
         document.getElementById("present-form").addEventListener("submit", function(event) {
             event.preventDefault();
-            const name = document.getElementById("name").value;
-            const gift = document.getElementById("gift").value;
-
+            const name = document.getElementById("name").value.trim();
+            const gift = document.getElementById("gift").value.trim();
+    
+            if (name === "" || gift === "") {
+                alert("Preencha todos os campos!");
+                return;
+            }
+    
             fetch(apiUrl, {
                 method: "POST",
                 body: JSON.stringify({ nome: name, presente: gift }),
@@ -100,15 +105,20 @@
             })
             .then(response => response.json())
             .then(data => {
-                document.getElementById("update-message").innerText = `✅ ${data.nome} adicionou: ${data.presente}`;
+                if (data.atualizado) {
+                    document.getElementById("update-message").innerText = `🔄 ${data.nome} atualizou seu presente para: ${data.presente}`;
+                } else {
+                    document.getElementById("update-message").innerText = `✅ ${data.nome} adicionou: ${data.presente}`;
+                }
                 document.getElementById("name").value = "";
                 document.getElementById("gift").value = "";
                 loadData();
             })
             .catch(error => console.error("Erro ao enviar dados:", error));
         });
-
+    
         window.onload = loadData;
     </script>
+    
 </body>
 </html>
