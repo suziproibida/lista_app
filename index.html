@@ -42,15 +42,15 @@
 </head>
 <body>
     <h1>Lista de Presentes - Chá de Casa Nova</h1>
-    <p>Escolha um presente e informe seu nome:</p>
+    <p>Escolha o presente que você deseja dar para o chá de casa nova:</p>
 
     <form id="present-form">
-        <input type="text" id="gift" placeholder="Presente" required>
         <input type="text" id="name" placeholder="Seu nome" required>
-        <button type="submit">Reservar</button>
+        <input type="text" id="gift" placeholder="Presente" required>
+        <button type="submit">Adicionar</button>
     </form>
 
-    <h2>Presentes Disponíveis:</h2>
+    <h2>Presentes já escolhidos:</h2>
     <table id="gift-table">
         <thead>
             <tr>
@@ -59,64 +59,73 @@
             </tr>
         </thead>
         <tbody>
-            <!-- Os dados da planilha serão inseridos aqui -->
+            <!-- Dados da planilha serão inseridos aqui -->
         </tbody>
     </table>
 
-    <p id="update-message"></p>
-
     <script>
-        const sheetUrl = "https://docs.google.com/spreadsheets/d/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/gviz/tq?tqx=out:json";
-        const apiUrl = "https://script.google.com/macros/s/AKfycbzd4w0yNOnbZRGtLGgc2lLfrm435y4oUI9WhMAO7wHN6f5bZshUkKEV0jUy-d2e2sBh/exec";
+        // URL da planilha em formato JSON
+        const sheetUrl = "https://script.google.com/macros/s/AKfycbzjJRVhbu9VyBdh0JjLTBlLDsJ5CwMTJ3TccH0K0kpYUDNiwmkryS_ewsG28eBBk7uc/exec";
 
+        // Função para carregar os dados da planilha
         function loadData() {
             fetch(sheetUrl)
-                .then(response => response.text())
+                .then(response => response.json())
                 .then(data => {
-                    data = JSON.parse(data.substring(47).slice(0, -2));
                     const tableBody = document.querySelector('#gift-table tbody');
-                    tableBody.innerHTML = "";
+                    tableBody.innerHTML = ""; // Limpar dados antigos
+                    data.feed.entry.forEach(entry => {
+                        const gift = entry.gsx$presente.$t;
+                        const name = entry.gsx$nome.$t;
+                        const row = document.createElement('tr');
 
-                    data.table.rows.forEach(row => {
-                        const gift = row.c[0]?.v || "";
-                        const name = row.c[1]?.v || "";
-                        const rowElement = document.createElement('tr');
-                        rowElement.innerHTML = `<td>${gift}</td><td>${name}</td>`;
-                        tableBody.appendChild(rowElement);
+                        // Células editáveis
+                        row.innerHTML = `
+                            <td contenteditable="true" data-field="presente" data-id="${entry.id}">${gift}</td>
+                            <td contenteditable="true" data-field="nome" data-id="${entry.id}">${name}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+
+                    // Adicionar evento para editar a tabela e salvar
+                    document.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
+                        cell.addEventListener('blur', function() {
+                            const id = this.getAttribute('data-id');
+                            const field = this.getAttribute('data-field');
+                            const value = this.innerText.trim();
+                            updateData(id, field, value); // Atualizar dados
+                        });
                     });
                 })
                 .catch(error => console.error("Erro ao carregar dados:", error));
         }
 
-        document.getElementById("present-form").addEventListener("submit", function(event) {
-            event.preventDefault();
-            const gift = document.getElementById("gift").value.trim();
-            const name = document.getElementById("name").value.trim();
-
-            if (gift === "" || name === "") {
-                alert("Preencha todos os campos!");
-                return;
-            }
+        // Função para atualizar os dados na planilha
+        function updateData(id, field, value) {
+            const apiUrl = "https://script.google.com/macros/s/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/exec"; // Substitua pelo ID do seu script
+            const data = {
+                id: id,
+                field: field,
+                value: value
+            };
 
             fetch(apiUrl, {
                 method: "POST",
-                body: JSON.stringify({ presente: gift, nome: name }),
+                body: JSON.stringify(data),
                 headers: { "Content-Type": "application/json" }
             })
             .then(response => response.json())
             .then(data => {
-                if (data.atualizado) {
-                    document.getElementById("update-message").innerText = `🔄 ${data.nome} reservou o presente: ${data.presente}`;
+                if (data.status === "success") {
+                    console.log("Dados atualizados!");
                 } else {
-                    document.getElementById("update-message").innerText = `✅ ${data.nome} adicionou um novo presente: ${data.presente}`;
+                    console.error("Erro ao atualizar dados:", data.message);
                 }
-                document.getElementById("gift").value = "";
-                document.getElementById("name").value = "";
-                setTimeout(loadData, 1000); // Recarrega a tabela após um pequeno delay
             })
             .catch(error => console.error("Erro ao enviar dados:", error));
-        });
+        }
 
+        // Carregar os dados ao carregar a página
         window.onload = loadData;
     </script>
 </body>
