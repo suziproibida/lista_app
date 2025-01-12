@@ -42,7 +42,7 @@
 </head>
 <body>
     <h1>Lista de Presentes - Chá de Casa Nova</h1>
-    <p>Escolha o presente que você deseja dar para o chá de casa nova:</p>
+    <p>Escolha o presente que você deseja dar:</p>
 
     <form id="present-form">
         <input type="text" id="name" placeholder="Seu nome" required>
@@ -63,43 +63,51 @@
         </tbody>
     </table>
 
-    <script>
-        // URL da planilha em formato JSON
-        const sheetUrl = "https://spreadsheets.google.com/feeds/list/1kgfqDLaWsJ-9BihTsep4xxZNjek6PAcenkZu8r4NiBQ/od6/public/values?alt=json";
+    <p id="update-message"></p>
 
-        // Função para carregar os dados da planilha
+    <script>
+        const sheetUrl = "https://docs.google.com/spreadsheets/d/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/gviz/tq?tqx=out:json";
+        const apiUrl = "https://script.google.com/macros/s/AKfycbxzMmM9XWqV03LVwWNepNG3b3p6RDIq-emMuK5iQuEGM531NvVxSA5Jl6OZco2mXQMY/exec";
+
         function loadData() {
             fetch(sheetUrl)
-                .then(response => response.json())
+                .then(response => response.text())
                 .then(data => {
+                    data = JSON.parse(data.substring(47).slice(0, -2));
                     const tableBody = document.querySelector('#gift-table tbody');
-                    tableBody.innerHTML = ""; // Limpar dados antigos
-                    data.feed.entry.forEach(entry => {
-                        const name = entry.gsx$nome.$t;
-                        const gift = entry.gsx$presente.$t;
-                        const row = document.createElement('tr');
-                        row.innerHTML = `<td>${name}</td><td>${gift}</td>`;
-                        tableBody.appendChild(row);
+                    tableBody.innerHTML = "";
+
+                    data.table.rows.forEach(row => {
+                        const name = row.c[0]?.v || "";
+                        const gift = row.c[1]?.v || "";
+                        const rowElement = document.createElement('tr');
+                        rowElement.innerHTML = `<td>${name}</td><td>${gift}</td>`;
+                        tableBody.appendChild(rowElement);
                     });
                 })
                 .catch(error => console.error("Erro ao carregar dados:", error));
         }
 
-        // Função para adicionar presente
         document.getElementById("present-form").addEventListener("submit", function(event) {
             event.preventDefault();
             const name = document.getElementById("name").value;
             const gift = document.getElementById("gift").value;
 
-            // Aqui você pode integrar uma API para salvar os dados na planilha do Google
-            // No caso de uma planilha pública, você não conseguirá fazer isso diretamente, 
-            // então você precisará de um backend para enviar os dados para a API do Google Sheets.
-
-            alert("Presente adicionado!");  // Apenas uma mensagem por enquanto
-            loadData();  // Recarregar os dados da planilha
+            fetch(apiUrl, {
+                method: "POST",
+                body: JSON.stringify({ nome: name, presente: gift }),
+                headers: { "Content-Type": "application/json" }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("update-message").innerText = `✅ ${data.nome} adicionou: ${data.presente}`;
+                document.getElementById("name").value = "";
+                document.getElementById("gift").value = "";
+                loadData();
+            })
+            .catch(error => console.error("Erro ao enviar dados:", error));
         });
 
-        // Carregar os dados ao carregar a página
         window.onload = loadData;
     </script>
 </body>
