@@ -65,41 +65,37 @@
 
     <script>
         // URL da planilha em formato JSON
-        const sheetUrl = "https://spreadsheets.google.com/feeds/list/1kgfqDLaWsJ-9BihTsep4xxZNjek6PAcenkZu8r4NiBQ/od6/public/values?alt=json";
+        const sheetUrl = "https://spreadsheets.google.com/feeds/list/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/od6/public/values?alt=json";
 
         // Função para carregar os dados da planilha
         function loadData() {
             fetch(sheetUrl)
-                .then(response => response.json())
+                .then(response => response.text())  // O retorno não é JSON puro
                 .then(data => {
+                    // Remover caracteres extras do JSON
+                    const json = JSON.parse(data.substring(47).slice(0, -2));  
                     const tableBody = document.querySelector('#gift-table tbody');
-                    tableBody.innerHTML = ""; // Limpar dados antigos
-                    data.feed.entry.forEach(entry => {
-                        const gift = entry.gsx$presente.$t;
-                        const name = entry.gsx$nome.$t;
-                        const row = document.createElement('tr');
+                    tableBody.innerHTML = "";  // Limpar a tabela antes de adicionar novas linhas
 
-                        // Células editáveis
-                        row.innerHTML = `
-                            <td contenteditable="true" data-field="presente" data-id="${entry.id}">${gift}</td>
-                            <td contenteditable="true" data-field="nome" data-id="${entry.id}">${name}</td>
+                    // Pegar os dados das linhas
+                    const rows = json.table.rows;
+                    rows.forEach(row => {
+                        const gift = row.c[0] ? row.c[0].v : "";  // Coluna do presente
+                        const name = row.c[1] ? row.c[1].v : "";  // Coluna do nome
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td contenteditable="true">${gift}</td>
+                            <td contenteditable="true">${name}</td>
                         `;
-                        tableBody.appendChild(row);
-                    });
-
-                    // Adicionar evento para editar a tabela e salvar
-                    document.querySelectorAll('td[contenteditable="true"]').forEach(cell => {
-                        cell.addEventListener('blur', function() {
-                            const id = this.getAttribute('data-id');
-                            const field = this.getAttribute('data-field');
-                            const value = this.innerText.trim();
-                            updateData(id, field, value); // Atualizar dados
-                        });
+                        tableBody.appendChild(tr);
                     });
                 })
                 .catch(error => console.error("Erro ao carregar dados:", error));
         }
 
+        // Carregar dados quando a página for aberta
+        window.onload = loadData;
         // Função para atualizar os dados na planilha
         function updateData(id, field, value) {
             const apiUrl = "https://script.google.com/macros/s/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/exec"; // Substitua pelo ID do seu script
