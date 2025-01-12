@@ -1,65 +1,106 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chá de Casa Nova</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        table {
+            width: 100%;
+            margin: 20px auto;
+            border-collapse: collapse;
+            background-color: #fff;
+        }
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+        }
+        th {
+            background-color: #eee;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        input[type="text"] {
+            padding: 8px;
+            width: 200px;
+            margin: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Lista de Presentes</h1>
-    <ul id="listaPresentes"></ul>
+    <h1>Lista de Presentes - Chá de Casa Nova</h1>
+    <p>Escolha o presente que você deseja dar para o chá de casa nova:</p>
 
-    <form id="formPresente">
-        <label for="item">Item:</label>
-        <input type="text" id="item" name="item" required><br><br>
-        <label for="comodo">Cômodo:</label>
-        <input type="text" id="comodo" name="comodo" required><br><br>
-        <label for="presenteador">Seu Nome:</label>
-        <input type="text" id="presenteador" name="presenteador" required><br><br>
-        <button type="submit">Reservar Presente</button>
+    <form id="present-form">
+        <input type="text" id="name" placeholder="Seu nome" required>
+        <input type="text" id="gift" placeholder="Presente" required>
+        <button type="submit">Adicionar</button>
     </form>
 
+    <h2>Presentes já escolhidos:</h2>
+    <table id="gift-table">
+        <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Presente</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Dados da planilha serão inseridos aqui -->
+        </tbody>
+    </table>
+
     <script>
-        // Carregar lista de presentes
-        function carregarPresentes() {
-            fetch('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?action=read')
+        // URL da planilha em formato JSON
+        const sheetUrl = "https://spreadsheets.google.com/feeds/list/1kgfqDLaWsJ-9BihTsep4xxZNjek6PAcenkZu8r4NiBQ/od6/public/values?alt=json";
+
+        // Função para carregar os dados da planilha
+        function loadData() {
+            fetch(sheetUrl)
                 .then(response => response.json())
                 .then(data => {
-                    const lista = document.getElementById('listaPresentes');
-                    lista.innerHTML = '';
-                    data.forEach(item => {
-                        if (item.disponivel === 'sim') {
-                            const li = document.createElement('li');
-                            li.textContent = `Item: ${item.item}, Cômodo: ${item.comodo}`;
-                            lista.appendChild(li);
-                        }
+                    const tableBody = document.querySelector('#gift-table tbody');
+                    tableBody.innerHTML = ""; // Limpar dados antigos
+                    data.feed.entry.forEach(entry => {
+                        const name = entry.gsx$nome.$t;
+                        const gift = entry.gsx$presente.$t;
+                        const row = document.createElement('tr');
+                        row.innerHTML = `<td>${name}</td><td>${gift}</td>`;
+                        tableBody.appendChild(row);
                     });
-                });
+                })
+                .catch(error => console.error("Erro ao carregar dados:", error));
         }
 
-        // Adicionar evento ao formulário
-        document.getElementById('formPresente').addEventListener('submit', function(event) {
+        // Função para adicionar presente
+        document.getElementById("present-form").addEventListener("submit", function(event) {
             event.preventDefault();
-            const item = document.getElementById('item').value;
-            const comodo = document.getElementById('comodo').value;
-            const presenteador = document.getElementById('presenteador').value;
+            const name = document.getElementById("name").value;
+            const gift = document.getElementById("gift").value;
 
-            fetch('https://script.google.com/macros/s/AKfycbwKccyOJYsJnPSn90J7GCvy0XABnu9z8u9xoZkwnbz_h8mOc-SrQ0bLREnsEqXTdhta/exec', {
-                method: 'POST',
-                body: JSON.stringify({ item, comodo, presenteador, action: 'reserve' }),
-                headers: { 'Content-Type': 'application/json' }
-            }).then(response => response.json())
-              .then(data => {
-                  alert('Presente reservado com sucesso!');
-                  carregarPresentes();
-                  document.getElementById('formPresente').reset();
-              }).catch(error => {
-                  console.error('Erro:', error);
-              });
+            // Aqui você pode integrar uma API para salvar os dados na planilha do Google
+            // No caso de uma planilha pública, você não conseguirá fazer isso diretamente, 
+            // então você precisará de um backend para enviar os dados para a API do Google Sheets.
+
+            alert("Presente adicionado!");  // Apenas uma mensagem por enquanto
+            loadData();  // Recarregar os dados da planilha
         });
 
-        // Carregar presentes ao iniciar
-        carregarPresentes();
+        // Carregar os dados ao carregar a página
+        window.onload = loadData;
     </script>
 </body>
 </html>
