@@ -42,24 +42,24 @@
 </head>
 <body>
     <h1>Lista de Presentes - Chá de Casa Nova</h1>
-    <p>Escolha o presente que você deseja dar:</p>
+    <p>Escolha um presente e informe seu nome:</p>
 
     <form id="present-form">
-        <input type="text" id="name" placeholder="Seu nome" required>
         <input type="text" id="gift" placeholder="Presente" required>
-        <button type="submit">Adicionar</button>
+        <input type="text" id="name" placeholder="Seu nome" required>
+        <button type="submit">Reservar</button>
     </form>
 
-    <h2>Presentes já escolhidos:</h2>
+    <h2>Presentes Disponíveis:</h2>
     <table id="gift-table">
         <thead>
             <tr>
-                <th>Nome</th>
                 <th>Presente</th>
+                <th>Nome</th>
             </tr>
         </thead>
         <tbody>
-            <!-- Dados da planilha serão inseridos aqui -->
+            <!-- Os dados da planilha serão inseridos aqui -->
         </tbody>
     </table>
 
@@ -67,8 +67,8 @@
 
     <script>
         const sheetUrl = "https://docs.google.com/spreadsheets/d/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/gviz/tq?tqx=out:json";
-        const apiUrl = "https://script.google.com/macros/s/AKfycbw6pxUvylMWDrMxOoYcZco0jDPH_s6DvNGQrpTGoakF8M7vY2qYN1xIV6-a1ugEVEpP/exec";
-    
+        const apiUrl = "https://script.google.com/macros/s/AKfycbyqdR74LlBFOCKjFYkeD9AH2mMVQOvIJ_8bTZYj2kt8OMZxUSOLLXu8HUIKDFadnZdb/exec";
+
         function loadData() {
             fetch(sheetUrl)
                 .then(response => response.text())
@@ -76,49 +76,48 @@
                     data = JSON.parse(data.substring(47).slice(0, -2));
                     const tableBody = document.querySelector('#gift-table tbody');
                     tableBody.innerHTML = "";
-    
+
                     data.table.rows.forEach(row => {
-                        const name = row.c[1]?.v || "";
                         const gift = row.c[0]?.v || "";
+                        const name = row.c[1]?.v || "Disponível";
                         const rowElement = document.createElement('tr');
-                        rowElement.innerHTML = `<td>${name}</td><td>${gift}</td>`;
+                        rowElement.innerHTML = `<td>${gift}</td><td>${name}</td>`;
                         tableBody.appendChild(rowElement);
                     });
                 })
                 .catch(error => console.error("Erro ao carregar dados:", error));
         }
-    
+
         document.getElementById("present-form").addEventListener("submit", function(event) {
             event.preventDefault();
-            const name = document.getElementById("name").value.trim();
             const gift = document.getElementById("gift").value.trim();
-    
-            if (name === "" || gift === "") {
+            const name = document.getElementById("name").value.trim();
+
+            if (gift === "" || name === "") {
                 alert("Preencha todos os campos!");
                 return;
             }
-    
+
             fetch(apiUrl, {
                 method: "POST",
-                body: JSON.stringify({ nome: name, presente: gift }),
+                body: JSON.stringify({ presente: gift, nome: name }),
                 headers: { "Content-Type": "application/json" }
             })
             .then(response => response.json())
             .then(data => {
                 if (data.atualizado) {
-                    document.getElementById("update-message").innerText = `🔄 ${data.nome} atualizou seu presente para: ${data.presente}`;
+                    document.getElementById("update-message").innerText = `🔄 ${data.nome} reservou o presente: ${data.presente}`;
                 } else {
-                    document.getElementById("update-message").innerText = `✅ ${data.nome} adicionou: ${data.presente}`;
+                    document.getElementById("update-message").innerText = `✅ ${data.nome} adicionou um novo presente: ${data.presente}`;
                 }
-                document.getElementById("name").value = "";
                 document.getElementById("gift").value = "";
+                document.getElementById("name").value = "";
                 loadData();
             })
             .catch(error => console.error("Erro ao enviar dados:", error));
         });
-    
+
         window.onload = loadData;
     </script>
-    
 </body>
 </html>
