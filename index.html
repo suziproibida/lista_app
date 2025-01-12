@@ -67,7 +67,7 @@
 
     <script>
         const sheetUrl = "https://docs.google.com/spreadsheets/d/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/gviz/tq?tqx=out:json";
-        const apiUrl = "https://script.google.com/macros/s/AKfycbyqdR74LlBFOCKjFYkeD9AH2mMVQOvIJ_8bTZYj2kt8OMZxUSOLLXu8HUIKDFadnZdb/exec";
+        const apiUrl = "https://script.google.com/macros/s/AKfycbzvqR4ylqcLl9VXulHvK976WbJz07uWLI-Qq7cIsLBvGWms9T15yCRcrxlj-8-5FVYK/exec";
 
         function loadData() {
             fetch(sheetUrl)
@@ -79,7 +79,7 @@
 
                     data.table.rows.forEach(row => {
                         const gift = row.c[0]?.v || "";
-                        const name = row.c[1]?.v || "Disponível";
+                        const name = row.c[1]?.v || "";
                         const rowElement = document.createElement('tr');
                         rowElement.innerHTML = `<td>${gift}</td><td>${name}</td>`;
                         tableBody.appendChild(rowElement);
@@ -112,7 +112,7 @@
                 }
                 document.getElementById("gift").value = "";
                 document.getElementById("name").value = "";
-                loadData();
+                setTimeout(loadData, 1000); // Recarrega a tabela após um pequeno delay
             })
             .catch(error => console.error("Erro ao enviar dados:", error));
         });
