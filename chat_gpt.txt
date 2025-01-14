@@ -1,2 +1,0 @@
-id_implantacao: AKfycbxzMmM9XWqV03LVwWNepNG3b3p6RDIq-emMuK5iQuEGM531NvVxSA5Jl6OZco2mXQMY
-url_implantacao: https://script.google.com/macros/s/AKfycbxzMmM9XWqV03LVwWNepNG3b3p6RDIq-emMuK5iQuEGM531NvVxSA5Jl6OZco2mXQMY/exec
