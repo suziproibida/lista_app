@@ -1,122 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chá de Casa Nova</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #f4f4f4;
-            padding: 20px;
-        }
-        table {
-            width: 100%;
-            margin: 20px auto;
-            border-collapse: collapse;
-            background-color: #fff;
-        }
-        th, td {
-            padding: 8px 12px;
-            border: 1px solid #ccc;
-            text-align: center;
-        }
-        th {
-            background-color: #eee;
-        }
-        input[type="text"] {
-            width: 100%;
-            border: none;
-            text-align: center;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-    </style>
+    <title>Escolha seu Presente</title>
+    <script defer src="script.js"></script>
 </head>
 <body>
-    <h1>Lista de Presentes - Chá de Casa Nova</h1>
-
-    <table id="gift-table">
+    <h1>Escolha um Presente</h1>
+    <table border="1">
         <thead>
             <tr>
                 <th>Presente</th>
                 <th>Nome</th>
+                <th>Ação</th>
             </tr>
         </thead>
-        <tbody>
-            <!-- Dados da planilha serão carregados aqui -->
-        </tbody>
+        <tbody id="tabela-presentes"></tbody>
     </table>
-
-    <button onclick="sendUpdates()">Salvar Atualizações</button>
-
-    <script>
-        const sheetUrl = "https://docs.google.com/spreadsheets/d/12T6q2_s81ji1RJe8KHabY8-myMYJTnEckDzJ-PP6Rgc/gviz/tq?tqx=out:json"; 
-        const apiUrl = "https://script.google.com/macros/s/AKfycbxUe-ZCWAwEo3V7gxt7ASdFNfFQVmm5DYj2N-8vPPlqsNRiJnEZKG7WttW7mjxmXpg/exec";
-
-
-        // Carregar dados da planilha
-        function loadData() {
-            fetch(sheetUrl)
-                .then(response => response.text())
-                .then(data => {
-                    const json = JSON.parse(data.substring(47).slice(0, -2));  
-                    const tableBody = document.querySelector('#gift-table tbody');
-                    tableBody.innerHTML = "";
-
-                    json.table.rows.forEach((row, index) => {
-                        const gift = row.c[0] ? row.c[0].v : "";
-                        const name = row.c[1] ? row.c[1].v : "";
-
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${gift}</td>
-                            <td><input type="text" value="${name}" data-index="${index}"></td>
-                        `;
-                        tableBody.appendChild(tr);
-                    });
-                })
-                .catch(error => console.error("Erro ao carregar dados:", error));
-        }
-
-        // Enviar atualizações para o Google Sheets
-        function sendUpdates() {
-            const inputs = document.querySelectorAll("input[type='text']");
-            const updates = [];
-
-            inputs.forEach(input => {
-                const index = input.getAttribute("data-index");
-                const name = input.value.trim();
-                updates.push({ index, name });
-            });
-
-            fetch(apiUrl, {
-                method: "POST",
-                body: JSON.stringify({ updates }),
-                headers: { "Content-Type": "application/json" }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    alert("Dados atualizados com sucesso!");
-                    loadData(); // Recarregar a tabela
-                } else {
-                    console.error("Erro ao atualizar:", data.message);
-                }
-            })
-            .catch(error => console.error("Erro ao enviar dados:", error));
-        }
-
-        // Carregar a tabela ao abrir o site
-        window.onload = loadData;
-    </script>
 </body>
 </html>
